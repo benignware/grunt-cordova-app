@@ -32,18 +32,18 @@ module.exports = function(grunt) {
     cordova_build: {
       default_options: {
         options: {
-        },
-        files: {
-          'tmp/default_options': ['test/fixtures/testing', 'test/fixtures/123']
+          path: 'tmp/default_options/cordova',
+          clean: false,
+          config: {
+            name: "Hello My App"
+          }
         }
       },
       custom_options: {
         options: {
-          separator: ': ',
-          punctuation: ' !!!'
-        },
-        files: {
-          'tmp/custom_options': ['test/fixtures/testing', 'test/fixtures/123']
+          path: 'tmp/custom_options/cordova',
+          clean: false,
+          config: 'test/fixtures/cordova.json'
         }
       }
     },
@@ -63,9 +63,9 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-nodeunit');
 
-  // Whenever the "test" task is run, first clean the "tmp" dir, then run this
+  // Whenever the "test" task is run, do not clean the "tmp" dir in order to use caching, then run this
   // plugin's task(s), then test the result.
-  grunt.registerTask('test', ['clean', 'cordova_build', 'nodeunit']);
+  grunt.registerTask('test', ['cordova_build', 'nodeunit']);
 
   // By default, lint and run all tests.
   grunt.registerTask('default', ['jshint', 'test']);

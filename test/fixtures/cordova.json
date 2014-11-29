@@ -1,0 +1,16 @@
+{
+  "platforms": {
+    "ios": {}, "android": {}
+  }, 
+  "plugins": {
+    "org.apache.cordova.console": "0.2.10",
+    "cc.fovea.cordova.purchase": "3.9.0-beta.4",
+    "https://github.com/Wizcorp/phonegap-facebook-plugin.git": {
+      "version": "0.10.1",
+      "params": {  
+        "APP_ID": "XXXXXXXXXXXXXXX", 
+        "APP_NAME": "Fictional Facebook-App"
+      }
+    }
+  }
+}

@@ -1,0 +1,2 @@
+/Users/rafaelnowrotek/Documents/Projekte/CountR/LuckyCat/Workspace 3/grunt-cordova-build/tmp/custom_options/cordova/platforms/android/com.phonegap.plugins.facebookconnect/FacebookLib/ant-build/AndroidManifest.xml : \
+/Users/rafaelnowrotek/Documents/Projekte/CountR/LuckyCat/Workspace 3/grunt-cordova-build/tmp/custom_options/cordova/platforms/android/com.phonegap.plugins.facebookconnect/FacebookLib/AndroidManifest.xml \
