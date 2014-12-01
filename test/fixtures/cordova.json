@@ -1,4 +1,7 @@
 {
+  "id": "grunt.cordova.build.example-app", 
+  "version": "0.0.1",
+  "name": "Example App",
   "platforms": {
     "ios": {}, "android": {}
   }, 
