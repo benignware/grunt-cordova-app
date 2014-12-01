@@ -5,5 +5,5 @@
 -keep class com.facebook.widget.LoginButton { <init>(...); }
 
 # view AndroidManifest.xml #generated:6
--keep class grunt.cordova.build.CordovaApp { <init>(...); }
+-keep class grunt.cordova.build.example_app.CordovaApp { <init>(...); }
 

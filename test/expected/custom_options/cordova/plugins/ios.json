@@ -107,15 +107,15 @@
     },
     "installed_plugins": {
         "org.apache.cordova.console": {
-            "PACKAGE_NAME": "grunt.cordova.build"
+            "PACKAGE_NAME": "grunt.cordova.build.example-app"
         },
         "cc.fovea.cordova.purchase": {
-            "PACKAGE_NAME": "grunt.cordova.build"
+            "PACKAGE_NAME": "grunt.cordova.build.example-app"
         },
         "com.phonegap.plugins.facebookconnect": {
             "APP_ID": "XXXXXXXXXXXXXXX",
             "APP_NAME": "Fictional Facebook-App",
-            "PACKAGE_NAME": "grunt.cordova.build"
+            "PACKAGE_NAME": "grunt.cordova.build.example-app"
         }
     },
     "dependent_plugins": {}

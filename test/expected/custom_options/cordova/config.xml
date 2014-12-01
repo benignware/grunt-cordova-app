@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<widget id="grunt.cordova.build" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:gap="http://phonegap.com/ns/1.0">
-	<name>grunt-cordova-build</name>
-	<description>cordova-app description</description>
-	<author email="author@example.com" url="homepage@example.com"/>
-	<access origin="*"/>
-	<content src="index.html"/>
+<widget id="grunt.cordova.build.example-app" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:gap="http://phonegap.com/ns/1.0">
+	<name>Example App</name>
 	<platform name="ios"/>
 	<platform name="android"/>
 	<gap:plugin version="0.2.10" name="org.apache.cordova.console"/>
