@@ -1,12 +1,21 @@
 'use strict';
 var
   xpath = require('xpath'),
-  dom = require('xmldom').DOMParser, 
+  xmldom = require('xmldom'), 
   js2xmlparser = require("js2xmlparser"), 
+  xml2js = require("xml2js"),
+  fs = require('fs'),
   merge = require("deepmerge");
 
+
+var namespaces = {
+  "default": "http://www.w3.org/ns/widgets", 
+  "cdv": "http://cordova.apache.org/ns/1.0",
+  "gap": "http://phonegap.com/ns/1.0"
+};
+
 // builds a js2xmlparser-compatible object from cordova config options
-var js2xmljs = function(options) {
+var js2domjs = function(options) {
   var data = {"@": {}}, i, attr;
   // widget
   var attrs = ['id', 'version', 'android-versionCode', 'ios-CFBundleVersion'];
@@ -15,11 +24,6 @@ var js2xmljs = function(options) {
       data["@"][attr] = options[attr];
     }
   });
-  if (typeof options.xmlns === "object") {
-    Object.keys(options.xmlns).forEach(function(ns) {
-      data["@"][ns !== "default" ? "xmlns:" + ns : "xmlns"] = options.xmlns[ns]; 
-    });
-  }
   //  name
   if (typeof options.name === "string") {
     data.name = options.name;
@@ -72,15 +76,23 @@ var js2xmljs = function(options) {
       };
     });
   }
+  // screens
+  if (options.screens instanceof Array) {
+    data.screen = options.screens.map(function(screen) {
+      return {
+        "@": screen
+      };
+    });
+  }
   // platforms
-  if (typeof options.preferences == "object") {
+  if (typeof options.platforms == "object") {
     var platform, platforms = [];
     for (platform in options.platforms) {
       platforms.push(merge({
         "@": {
           name: platform
         }
-      }, js2xmljs(options.platforms[platform])));
+      }, js2domjs(options.platforms[platform])));
     }
     data.platform = platforms;
   }
@@ -120,12 +132,8 @@ var js2xmljs = function(options) {
   return data;
 };
 
-var xmljs2js = function(node) {
-  var select = xpath.useNamespaces({
-    "wgt": "http://www.w3.org/ns/widgets", 
-    "cdv": "http://cordova.apache.org/ns/1.0",
-    "gap": "http://phonegap.com/ns/1.0"
-  });
+var dom2js = function(node) {
+  var select = xpath.useNamespaces(namespaces);
   var result = {};
   var rootNode = select(".", node)[0];
   if (rootNode) {
@@ -138,17 +146,17 @@ var xmljs2js = function(node) {
       }
     });
     // name
-    var nameNodes = select("./wgt:name", node);
+    var nameNodes = select("./default:name", node);
     if (nameNodes.length && nameNodes[0].firstChild) {
       result.name = nameNodes[0].firstChild.nodeValue;
     }
     // description
-    var descriptionNodes = select("./wgt:description", node);
+    var descriptionNodes = select("./default:description", node);
     if (descriptionNodes.length && descriptionNodes[0].firstChild) {
       result.description = descriptionNodes[0].firstChild.nodeValue;
     }
     // author
-    var authorNodes = select("./wgt:author", node);
+    var authorNodes = select("./default:author", node);
     if (authorNodes.length) {
       var author = {
         email: authorNodes[0].getAttribute('email'), 
@@ -160,7 +168,7 @@ var xmljs2js = function(node) {
       result.author = author;
     }
     // preferences
-    var preferenceNodes = select("./wgt:preference", node);
+    var preferenceNodes = select("./default:preference", node);
     if (preferenceNodes.length) {
       result.preferences = {};
       preferenceNodes.forEach(function(preferenceNode) {
@@ -172,13 +180,13 @@ var xmljs2js = function(node) {
       });
     }
     // platforms
-    var platformNodes = select("./wgt:platform", node);
+    var platformNodes = select("./default:platform", node);
     if (platformNodes.length) {
       result.platforms = {};
       platformNodes.forEach(function(platformNode) {
         var name = platformNode.getAttribute('name');
         if (name) {
-          result.platforms[name] = xmljs2js(platformNode);
+          result.platforms[name] = dom2js(platformNode);
         }
       });
     }
@@ -194,7 +202,7 @@ var xmljs2js = function(node) {
             version: version ? version : "", 
             params: {}
           };
-          var pluginParamNodes = select("./wgt:param", pluginNode);
+          var pluginParamNodes = select("./default:param", pluginNode);
           if (pluginParamNodes.length) {
             pluginParamNodes.forEach(function(pluginParamNode) {
               var name = pluginParamNode.getAttribute('name');
@@ -208,7 +216,7 @@ var xmljs2js = function(node) {
       });
     }
     // icons
-    var iconNodes = select("./wgt:icon", node);
+    var iconNodes = select("./default:icon", node);
     if (iconNodes.length) {
       result.icons = iconNodes.map(function(iconNode) {
         return {
@@ -218,19 +226,110 @@ var xmljs2js = function(node) {
         };
       });
     }
+    // screens
+    var screenNodes = select("./default:screen", node);
+    if (screenNodes.length) {
+      result.screens = iconNodes.map(function(screenNode) {
+        return {
+          src: screenNode.getAttribute('src'),
+          width: screenNode.getAttribute('width'),
+          height: screenNode.getAttribute('height') 
+        };
+      });
+    }
     return result;
   }
 };
 
-module.exports = {
-  stringify: function(js) {
-    var xmljs = js2xmljs(js);
-    var xml = js2xmlparser( "widget", xmljs );
-    return xml;
-  }, 
-  parse: function(xml) {
-    var doc = new dom().parseFromString(xml);
-    var js = xmljs2js(doc.documentElement);
-    return js;
+function normalize(json) {
+  // normalize config platforms
+  if (json.platforms instanceof Array) {
+    var platforms = {};
+    for (var platform in options.config.platforms) {
+      platforms[platform] = {};
+    }
+    json.platforms = platforms;
   }
+  return json;
+}
+
+function Config() {
+  // keep domjs-representation
+  this.json = null;
+  this.domjs = null;
+}
+
+Config.prototype.toJSON = function() {
+  return this.json;
 };
+
+Config.prototype.toXML = function() {
+  var xml;
+  if (this.domjs) {
+    var domjs = this.domjs;
+    Object.keys(namespaces).forEach(function(ns) {
+      domjs["@"][ns !== "default" ? "xmlns:" + ns : "xmlns"] = namespaces[ns]; 
+    });
+    xml = js2xmlparser( "widget", domjs );
+  }
+  return xml;
+};
+
+Config.prototype.load = function(file) {
+  // load json
+  var json, doc;
+  // read object
+  if (typeof file == "object") {
+    if (file.documentElement || file.ownerDocument) {
+      doc = file;
+    } else {
+      json = file;
+    }
+  }
+  // read file
+  if (!json && !doc) {
+    var contents = fs.readFileSync(file, 'utf8');
+    if (contents) {
+      try {
+        json = JSON.parse(contents);
+      } catch(e) {
+      }
+      if (!json) {
+        try {
+          doc = new xmldom.DOMParser().parseFromString(contents);
+        } catch(e) {
+        }
+      }
+    }
+  }
+  
+  if (json) {
+    this.json = normalize(json);
+    this.domjs = js2domjs(json);
+    
+  } else if (doc && contents) {
+    
+    // get json
+    json = dom2js(doc.documentElement);
+    this.json = normalize(json);
+    
+    // convert to domjs
+    var domjs;
+    var parser = new xml2js.Parser({attrkey: "@", charkey: "#"});
+    parser.parseString(contents, function (err, result) {
+      if (!err) {
+        domjs = result["widget"];
+      }
+    });
+    if (domjs) {
+      this.domjs = domjs;
+    }
+  }
+  
+};
+
+Config.prototype.save = function(dest) {
+  fs.writeFileSync(dest, this.toXML());
+};
+
+module.exports = Config;
