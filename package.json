@@ -42,11 +42,14 @@
     "MD5": "^1.2.1", 
     "glob": "^4.2.1",
     "deepmerge": "^0.2.7", 
-    "httpsync": "^0.0.8"
+    "httpsync": "^0.0.8", 
+    "cheerio": "^0.18.0", 
+    "html": "^0.0.7"
   },
   "devDependencies": {
     "grunt-contrib-jshint": "^0.9.2",
     "grunt-contrib-clean": "^0.5.0",
+    "grunt-contrib-copy": "^0.7.0",
     "grunt-contrib-nodeunit": "^0.3.3",
     "grunt": "~0.4.5",
     "xmldom": "^0.1.19"
