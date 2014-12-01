@@ -27,6 +27,7 @@ var
     this.options.tmp = path.join(this.options.path, options.tmp || path.join(this.options.cache, "tmp"));
     this.queue = [];
     this.complete = true;
+    this.error = true;
     cleanDir(this.options.tmp);
   };
   
@@ -106,7 +107,6 @@ var
         var pluginId = getPluginId(path.join(cacheDir, "plugin.xml"));
         if (pluginId) {
           // plugin is cached
-          console.log("get plugin from cache...");
           var normalizedPath = path.relative(pluginLoader.options.path, cacheDir);
           callback.call(pluginLoader, pluginId, version, normalizedPath);
           return;
@@ -167,6 +167,8 @@ var
                         if (!fs.existsSync(cacheDir)){
                           fs.mkdirSync(cacheDir, "777", true); 
                           fs.renameSync(packagePath, cacheDir);
+                          var normalizedPath = path.relative(pluginLoader.options.path, cacheDir);
+                          callback.call(pluginLoader, pluginId, version, normalizedPath);
                         }
                       } else {
                         console.error("no valid plugin");
@@ -174,6 +176,8 @@ var
                     } else {
                       console.error("package not found");
                     }
+                  } else {
+                    console.error("error while downloading package");
                   }
                 });
               }
@@ -203,19 +207,27 @@ var
         load.call(pluginLoader, id, version, function() {
           callback.apply(this, arguments);
           next.call(pluginLoader);
+        }, function() {
+          // error
+          fail.call(pluginLoader);
         });
       }, 10);
     } else {
-      complete.call(pluginLoader);
+      done.call(pluginLoader);
     }
   }
   
-  function complete() {
-    console.log("COMPLETE");
+  function fail() {
+    if (typeof this.options.error) {
+      this.options.error();
+    }
+  }
+  
+  function done() {
     this.complete = true;
     cleanDir(this.options.tmp);
-    if (typeof this.options.complete) {
-      this.options.complete();
+    if (typeof this.options.success) {
+      this.options.success();
     }
   }
   module.exports = PluginLoader;
