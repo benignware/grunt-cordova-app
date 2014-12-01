@@ -16,14 +16,16 @@ var
   path = require('path'), 
   fs = require('node-fs'),
   ncp = require('ncp').ncp,
-  chalk = require('chalk'),
   shell = require('shelljs'), 
   merge = require('deepmerge'), 
   http = require('http'), 
   tarball = require('tarball-extract'), 
   md5 = require('MD5'), 
   glob = require("glob"),
+  cheerio = require("cheerio"),
+  html = require("html"),
   // local modules
+  logger = require('./lib/logger.js').getInstance(),
   Config = require('./lib/config.js'),
   PluginLoader = require('./lib/loader.js');
 
@@ -35,17 +37,17 @@ module.exports = function(grunt) {
   // pkg info
   var pkg = grunt.file.readJSON('package.json');
   
+  // config object
+  var cfg;
+  
   var defaults = {
     path: 'cordova', 
-    clean: false, 
+    clean: false,
+    build: true,
+    hooks: {}, 
     config: {
       // defaults
-      id: "grunt.cordova.build", 
-      xmlns: {
-        "default": "http://www.w3.org/ns/widgets",
-        "cdv": "http://cordova.apache.org/ns/1.0",
-        "gap": "http://phonegap.com/ns/1.0"
-      },
+      id: "grunt.cordova.build",
       version: pkg.version,
       name: pkg.name,
       description: "cordova-app description", 
@@ -65,202 +67,346 @@ module.exports = function(grunt) {
       platforms: {}, 
       plugins: {}
       // TODO: features, screens, ...
-    },
-    // tests
-    punctuation: '.',
-    separator: ', '
+    }
   };
   
-  var log = function(message) {
-    console.log(chalk.cyan(message), chalk.green(" "));
-  };
-  
-  var init = function(options) {
-    log("Init grunt-cordova-build");
-    // normalize config source
-    if (typeof options.config === 'string') {
-      options.config = merge(defaults.config, {
-        src: options.config
+  // executes user-defined pre- or post-tasks
+  var execHook = function( shell, commands, options) {
+    if (!commands) {
+      return;
+    }
+    if (typeof commands === 'string' || typeof commands === 'function') {
+      commands = [commands];
+    }
+    if (commands instanceof Array) {
+      commands.forEach(function(command) {
+        if (typeof command === 'string') {
+          shell.exec(command);
+        }
+        if (typeof command === 'function') {
+          command(shell, options.path);
+        }
       });
     }
-    if (typeof options.config.src !== 'undefined') {
-      options.config.src = typeof options.config.src === "string" ? [options.config.src] : options.config.src;
-    }
-    // normalize config platforms
-    if (options.config.platforms instanceof Array) {
-      var platforms = {};
-      for (var platform in options.config.platforms) {
-        platforms[platform] = {};
-      }
-      options.config.platforms = platforms;
-    }
-    // get config files
-    if (options.config.src instanceof Array) {
-      var source = options.config.src;
-      delete options.config.src;
-      // parse config files
-      source.forEach( function( src ) {
-        if ( grunt.file.isFile( src ) ) {
-          var contents = grunt.file.readJSON( src );
-          options.config = merge( options.config, contents );
+  };
+  
+  // sub-tasks
+  var tasks = {
+    /*
+     * Init config
+     */
+    init: function(options, callback) {
+      logger.log("Init grunt-cordova-build");
+      cfg = new Config();
+      // get config files
+      if (typeof options.config === 'string') {
+        // parse config file
+        if ( grunt.file.isFile( options.config ) ) {
+          cfg.load( options.config );
         } else {
-          console.error("config file not found: " + src);
+          logger.error("config file not found: " + options.config);
+          callback(false);
+          return;
         }
-      });
-    }
-  };
-  
-  // cleans build path
-  var clean = function(options) {
-    // Clean
-    if (grunt.file.isDir(options.path) && options.clean) {
-      log("Clean path '" + options.path + "'");
-      grunt.file.delete(options.path);
-    }
-  };
-  
-  // creates a cordova project under the build path
-  var create = function(options) {
-    // Create app
-    if (!grunt.file.isDir( options.path )) {
-      log("Create cordova app " + options.config.id);
-      fs.mkdirSync(options.path, "777", true);  
-      var rtn = shell.exec("cordova create \"" + options.path + "\" \"" + options.config.id + "\" \"" + options.config.name + "\"");
-      if (rtn.code !== 0) {
-        console.error(chalk.red(rtn.output + " failed with error code " + rtn.code));
+      } else {
+        cfg.load(options.config);
       }
-    }
-  };
-  
-  // builds config.xml
-  var config = function(options) {
-    if (!grunt.file.isDir( options.path )) {
-      console.error('build path does not exist');
-      return;
-    }
-    var dest = path.join(options.path, "config.xml");
-    //console.log(chalk.green("build config"));
-    // write out xml
-    var xml = Config.stringify( options.config );
-    grunt.file.write( dest, xml );
-    // read config.xml
-    xml = grunt.file.read(dest);
-    options.config = Config.parse(xml);
-  };
-  
-  var removePlugins = function(options) {
-    var oldPlugins = grunt.file.expand({filter: 'isDirectory', cwd: path.join(options.path, "plugins")}, "*");
-    if (oldPlugins.length) {
-      oldPlugins.forEach(function(pluginName) {
-        if (grunt.file.isDir( path.join( options.path, "plugins", pluginName ))) {
-          log("Remove plugin: " + pluginName);
-          shell.exec("cd " + options.path + " && cordova plugin rm " + pluginName + "");
-        }
-      });
-    }
-  };
-  
-  var addPlugins = function(options, callback) {
-    if (typeof options.config.plugins != "object") {
-      callback();
-      return;
-    }
-    var pluginNames = Object.keys(options.config.plugins);
-    if (pluginNames.length === 0) {
-      callback();
-      return;
-    }
-    var pluginLoader = new PluginLoader({
-      path: options.path, 
-      complete: function() {
-        callback();
+      options.config = cfg.toJSON();
+      // validate required options
+      if ( !options.config.name ) {
+        logger.error("App name must be specified.");
+        callback(false);
+        return;
       }
-    });
-    pluginNames.forEach(function(pluginName) {
-      var plugin = options.config.plugins[pluginName];
-      log("Add plugin " + pluginName + "@" + plugin.version + "...");
-      pluginLoader.load(pluginName, plugin.version, function(id, version, src) {
-        var pluginCommand = "cd " + options.path + " && cordova plugin -d add " + src, pluginParamName;
-        for (pluginParamName in plugin.params) {
-          pluginCommand+= " --variable " + pluginParamName + "=\"" + plugin.params[pluginParamName] + "\"";
+      if ( !options.config.id ) {
+        logger.error("App id must be specified.");
+        callback(false);
+        return;
+      }
+      
+      if ( !options.config.version ) {
+        logger.error("App version must be specified.");
+        callback(false);
+        return;
+      }
+      callback(true);
+    },
+    // Clean build path
+    clean: function(options, callback) {
+      if (grunt.file.isDir(options.path) && options.clean) {
+        logger.log("Clean path '" + options.path + "'");
+        execHook(shell, options.hooks.beforeClean, options);
+        grunt.file.delete(options.path);
+        execHook(shell, options.hooks.afterClean, options);
+      }
+      callback(true);
+    },
+    /* 
+     * Create app
+     */
+    create: function(options, callback) {
+      // Create app
+      if (!grunt.file.isDir( options.path )) {
+        logger.log("Create cordova app " + options.config.id);
+        fs.mkdirSync(options.path, "777", true);
+        execHook(shell, options.hooks.beforeCreate, options);
+        var rtn = shell.exec("cordova create \"" + options.path + "\" \"" + options.config.id + "\" \"" + options.config.name + "\"");
+        if (rtn.code !== 0) {
+          logger.error(chalk.red(rtn.output + " failed with error code " + rtn.code));
+          callback(false);
+          return;
         }
-        shell.exec(pluginCommand);
+        execHook(shell, options.hooks.afterCreate, options);
+      }
+      callback(true);
+    },
+    /*
+     * Build config
+     */
+    config: function(options, callback) {
+      var dest = path.join(options.path, "config.xml");
+      // build config
+      if (typeof options.config == 'object' && cfg) {
+        if (!grunt.file.isDir( options.path )) {
+          logger.error('Build path does not exist');
+          callback(false);
+          return;
+        }
+        execHook(shell, options.hooks.beforeConfig, options);
+        // write out xml
+        cfg.save(dest);
+        execHook(shell, options.hooks.afterConfig, options);
+      }
+      // read config
+      cfg = new Config();
+      cfg.load(dest);
+      options.config = cfg.toJSON();
+      callback(true);
+    },
+    /*
+     * Sanitizes index.html and adds cordova.js
+     */
+    sanitize: function(options, callback) {
+      var file = options.config.content && options.config.content.src || path.join(options.path, "www", "index.html"); 
+      var $ = cheerio.load(grunt.file.read(file));
+      if ( !$("script[src='cordova.js']").length ) {
+        $('head').append('<script src="cordova.js"></script>');
+      }
+      grunt.file.write(file, html.prettyPrint($.root().html(), {
+        indent_size: 2
+      }));
+      callback(true);
+    },
+    /*
+     * Remove Plugins
+     */
+    removePlugins: function(options, callback) {
+      var oldPlugins = grunt.file.expand({filter: 'isDirectory', cwd: path.join(options.path, "plugins")}, "*");
+      var success = true;
+      if (oldPlugins.length) {
+        oldPlugins.forEach(function(pluginName) {
+          if (success && grunt.file.isDir( path.join( options.path, "plugins", pluginName ))) {
+            logger.log("Remove plugin: " + pluginName);
+            execHook(shell, options.hooks.beforePluginRemove, options);
+            var rtn = shell.exec("cd " + options.path + " && cordova plugin rm " + pluginName + "");
+            if (rtn.code !== 0) {
+              logger.error(chalk.red(rtn.output + " failed with error code " + rtn.code));
+              success = false;
+              return;
+            }
+            execHook(shell, options.hooks.afterPluginRemove, options);
+          }
+        });
+      }
+      callback(success);
+    },
+    /*
+     * Add Plugins
+     */
+    addPlugins: function(options, callback) {
+      var success = true;
+      if (typeof options.config.plugins != "object") {
+        callback(true);
+        return;
+      }
+      var pluginNames = Object.keys(options.config.plugins);
+      if (pluginNames.length === 0) {
+        callback(true);
+        return;
+      }
+      var pluginLoader = new PluginLoader({
+        path: options.path, 
+        success: function() {
+          callback(true);
+        },
+        error: function() {
+          callback(false);
+        }
       });
-    });
-  };
-  
-  
-  // remove platforms
-  var removePlatforms = function(options) {
-    var oldPlatforms = grunt.file.expand({filter: 'isDirectory', cwd: path.join(options.path, "platforms")}, "*");
-    oldPlatforms.forEach(function(platform) {
-      log("Remove platform " + platform + "");
-      shell.exec("cd " + options.path + " && cordova platform remove " + platform + "");
-    });
-  };
-  
-  // add platforms
-  var addPlatforms = function(options) {
-    // prepare platforms
-    if (typeof options.config.platforms == "object") {
-      Object.keys(options.config.platforms).forEach(function(platform) {
-        log("Add platform " + platform + "");
-        shell.exec("cd \"" + options.path + "\" && cordova platform add " + platform + "");
+      pluginNames.forEach(function(pluginName) {
+        if (success) {
+          var plugin = options.config.plugins[pluginName];
+          logger.info("Add plugin " + pluginName + "@" + plugin.version + "...");
+          pluginLoader.load(pluginName, plugin.version, function(id, version, src) {
+            if (id) {
+              execHook(shell, options.hooks.beforePluginAdd, options);
+              var pluginCommand = "cd " + options.path + " && cordova plugin -d add " + src, pluginParamName;
+              for (pluginParamName in plugin.params) {
+                pluginCommand+= " --variable " + pluginParamName + "=\"" + plugin.params[pluginParamName] + "\"";
+              }
+              var rtn = shell.exec(pluginCommand);
+              if (rtn.code !== 0) {
+                logger.error(chalk.red(rtn.output + " failed with error code " + rtn.code));
+                return;
+              }
+              execHook(shell, options.hooks.afterPluginAdd, options);
+            } else {
+              // error
+            }
+          });
+        }
       });
+    },
+    /*
+     * Remove platforms
+     */
+    removePlatforms: function(options, callback) {
+      var oldPlatforms = grunt.file.expand({filter: 'isDirectory', cwd: path.join(options.path, "platforms")}, "*");
+      oldPlatforms.forEach(function(platform) {
+        execHook(shell, options.hooks.beforePlatformRemove, options);
+        logger.info("Remove platform " + platform + "");
+        var rtn = shell.exec("cd " + options.path + " && cordova platform remove " + platform + "");
+        if (rtn.code !== 0) {
+          logger.error(chalk.red(rtn.output + " failed with error code " + rtn.code));
+          callback(false);
+          return;
+        }
+        execHook(shell, options.hooks.afterPlatformRemove, options);
+      });
+      callback(true);
+    },
+    /*
+     * Add platforms
+     */
+    addPlatforms: function(options, callback) {
+      var success = true;
+      if (typeof options.config.platforms == "object") {
+        // add platforms
+        Object.keys(options.config.platforms).forEach(function(platform) {
+          if (success) {
+            // call user-defined hook
+            execHook(shell, options.hooks.beforePlatformAdd, options);
+            logger.info("Add platform " + platform + "");
+            var rtn = shell.exec("cd \"" + options.path + "\" && cordova platform add " + platform + "");
+            if (rtn.code !== 0) {
+              logger.error(chalk.red(rtn.output + " failed with error code " + rtn.code));
+              success = false;
+              return;
+            }
+            // call user-defined hook
+            execHook(shell, options.hooks.afterPlatformAdd, options);
+          }
+        });
+      }
+      callback(success);
+    },
+    /*
+     * Prepare
+     */
+    prepare: function(options, callback) {
+      var success = true;
+      if (typeof options.config.platforms == "object") {
+        // call user-defined hook
+        execHook(shell, options.hooks.beforePrepare, options);
+        // iterate through platforms and exec prepare
+        Object.keys(options.config.platforms).forEach(function(platform) {
+          if (success) {
+            logger.info("Prepare platform " + platform + "");
+            var rtn = shell.exec("cd \"" + options.path + "\" && cordova prepare " + platform + "");
+            if (rtn.code !== 0) {
+              logger.error(chalk.red(rtn.output + " failed with error code " + rtn.code));
+              success = false;
+              return;
+            }
+          }
+        });
+        // call user-defined hook
+        execHook(shell, options.hooks.afterPrepare, options);
+      }
+      callback(success);
+    },
+    /*
+     * Compile
+     */
+    compile: function(options, callback) {
+      var success = true;
+      if (typeof options.config.platforms == "object") {
+        // call user-defined hook
+        execHook(shell, options.hooks.beforeCompile, options);
+        // iterate through platforms and exec prepare
+        Object.keys(options.config.platforms).forEach(function(platform) {
+          logger.info("Compile platform " + platform + "");
+          var rtn = shell.exec("cd \"" + options.path + "\" && cordova compile " + platform + "");
+          if (rtn.code !== 0) {
+            logger.error(chalk.red(rtn.output + " failed with error code " + rtn.code));
+            success = false;
+            return;
+          }
+        });
+        // call user-defined hook
+        execHook(shell, options.hooks.afterCompile, options);
+      }
+      callback(success);
+    },
+    beforeBuild: function(options, callback) {
+      execHook(shell, options.hooks.beforeBuild, options);
+      callback(true);
+    },
+    afterBuild: function(options, callback) {
+      execHook(shell, options.hooks.afterBuild, options);
+      callback(true);
     }
   };
   
-  // preparing includes setup of platforms and plugins
-  var prepare = function(options) {
-    // prepare platforms
-    if (typeof options.config.platforms == "object") {
-      Object.keys(options.config.platforms).forEach(function(platform) {
-        log("Prepare platform " + platform + "");
-        shell.exec("cd \"" + options.path + "\" && cordova prepare " + platform + "");
+  function run(taskQueue, options) {
+    var task = taskQueue.shift();
+    if (task) {
+      tasks[task](options, function(success) {
+        if (success) {
+          run(taskQueue, options);
+        } else {
+          done(false);
+        }
       });
+    } else {
+      // done without errors
     }
-  };
+  }
   
-  var compile = function(options) {
-    // compile platforms
-    if (typeof options.config.platforms == "object") {
-      Object.keys(options.config.platforms).forEach(function(platform) {
-        log("Compile platform " + platform + "");
-        shell.exec("cd \"" + options.path + "\" && cordova compile " + platform + "");
-      });
-    }
-  };
-
+  // TODO: single tasks
   grunt.registerMultiTask('cordova_build', 'Automate build of cordova apps', function() {
     // Merge task-specific and/or target-specific options with these defaults.
-    
     var done = this.async();
     
     var options = merge(defaults, this.options());
     
-    init(options);
-    clean(options);
+    // start the queue
+    run([
+      'init',
+      'clean',
+      'create',
+      'config',
+      'sanitize',
+      'beforeBuild',
+      'removePlatforms',
+      'removePlugins',
+      'addPlatforms',
+      'addPlugins',
+      'prepare',
+      'compile',
+      'afterBuild'
+    ], options);
     
-    create(options);
-    config(options);
-    
-    removePlatforms(options);
-    removePlugins(options);
-    
-    addPlatforms(options);
-    addPlugins(options, function() {
-      
-      // build
-      prepare(options);
-      compile(options);
-      
-      log("Done.");
-      
-      done();
-      
-    });
-
     
   });
-
 };
