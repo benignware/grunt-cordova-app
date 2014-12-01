@@ -96,7 +96,7 @@ module.exports = function(grunt) {
      * Init config
      */
     init: function(options, callback) {
-      logger.log("Init grunt-cordova-build");
+      logger.info("Init grunt-cordova-build");
       cfg = new Config();
       // get config files
       if (typeof options.config === 'string') {
@@ -134,7 +134,7 @@ module.exports = function(grunt) {
     // Clean build path
     clean: function(options, callback) {
       if (grunt.file.isDir(options.path) && options.clean) {
-        logger.log("Clean path '" + options.path + "'");
+        logger.info("Clean path '" + options.path + "'");
         execHook(shell, options.hooks.beforeClean, options);
         grunt.file.delete(options.path);
         execHook(shell, options.hooks.afterClean, options);
@@ -147,7 +147,7 @@ module.exports = function(grunt) {
     create: function(options, callback) {
       // Create app
       if (!grunt.file.isDir( options.path )) {
-        logger.log("Create cordova app " + options.config.id);
+        logger.info("Create cordova app " + options.config.id);
         fs.mkdirSync(options.path, "777", true);
         execHook(shell, options.hooks.beforeCreate, options);
         var rtn = shell.exec("cordova create \"" + options.path + "\" \"" + options.config.id + "\" \"" + options.config.name + "\"");
