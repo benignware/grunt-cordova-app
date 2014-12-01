@@ -34,7 +34,9 @@ exports.cordova_build = {
     var actual = grunt.file.read('tmp/default_options/cordova/config.xml');
     var expected = grunt.file.read('test/expected/default_options/cordova/config.xml');
     test.equal(actual, expected, 'config.xml should match expected result.');
-
+    
+    // TODO: Test installation
+    
     test.done();
   },
   custom_options: function(test) {
@@ -43,6 +45,8 @@ exports.cordova_build = {
     var actual = grunt.file.read('tmp/custom_options/cordova/config.xml');
     var expected = grunt.file.read('test/expected/custom_options/cordova/config.xml');
     test.equal(actual, expected, 'config.xml should match expected result.');
+    
+    // TODO: Test installation
 
     test.done();
   },
