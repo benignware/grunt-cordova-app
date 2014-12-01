@@ -22,6 +22,13 @@ module.exports = function(grunt) {
         jshintrc: '.jshintrc'
       }
     },
+    
+    // Copy sample app files to build path
+    copy: {
+      build: {
+        files: [{expand: true, cwd: 'test/fixtures/app', src: ['**'], dest: 'tmp/custom_options/cordova/www'}]
+      }
+    },
 
     // Before generating any new files, remove any previously-created files.
     clean: {
@@ -43,7 +50,16 @@ module.exports = function(grunt) {
         options: {
           path: 'tmp/custom_options/cordova',
           clean: false,
-          config: 'test/fixtures/cordova.json'
+          config: 'test/fixtures/cordova.json',
+          hooks: {
+            beforeBuild: function() {
+              console.log("Before build hook is called");
+              grunt.file.expand({cwd: "test/fixtures/app"}, "**/*").forEach(function(file) {
+                console.log("Copy file: ", file);
+                grunt.file.copy("test/fixtures/app/" + file, 'tmp/custom_options/cordova/www/' + file);
+              });
+            }
+          }
         }
       }
     },
@@ -61,6 +77,7 @@ module.exports = function(grunt) {
   // These plugins provide necessary tasks.
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-nodeunit');
 
   // Whenever the "test" task is run, do not clean the "tmp" dir in order to use caching, then run this
