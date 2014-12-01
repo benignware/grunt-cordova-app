@@ -206,7 +206,7 @@ module.exports = function(grunt) {
       if (oldPlugins.length) {
         oldPlugins.forEach(function(pluginName) {
           if (success && grunt.file.isDir( path.join( options.path, "plugins", pluginName ))) {
-            logger.log("Remove plugin: " + pluginName);
+            logger.info("Remove plugin: " + pluginName);
             execHook(shell, options.hooks.beforePluginRemove, options);
             var rtn = shell.exec("cd " + options.path + " && cordova plugin rm " + pluginName + "");
             if (rtn.code !== 0) {
@@ -368,18 +368,20 @@ module.exports = function(grunt) {
     }
   };
   
-  function run(taskQueue, options) {
+  function run(taskQueue, options, promise) {
     var task = taskQueue.shift();
     if (task) {
+      //console.log("run task: ", task);
       tasks[task](options, function(success) {
         if (success) {
-          run(taskQueue, options);
+          run(taskQueue, options, promise);
         } else {
-          done(false);
+          promise(false);
         }
       });
     } else {
       // done without errors
+      promise(true);
     }
   }
   
@@ -405,7 +407,7 @@ module.exports = function(grunt) {
       'prepare',
       'compile',
       'afterBuild'
-    ], options);
+    ], options, done);
     
     
   });
