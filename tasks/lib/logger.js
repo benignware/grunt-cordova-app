@@ -13,6 +13,7 @@ function Logger() {
 
 Logger.DEFAULT = '\x1b[0m';
 
+Logger.LOG = "black";
 Logger.INFO = "cyan";
 Logger.OK = "green";
 Logger.WARN = "orange";
@@ -23,7 +24,7 @@ Logger.getInstance = function() {
 };
 
 Logger.prototype.log = function(message) {
-  console.log('\x1b[0m', message + Logger.DEFAULT);
+  console.log(chalk[Logger.LOG](message) + Logger.DEFAULT);
 };
 
 Logger.prototype.info = function(message) {
