@@ -16,6 +16,10 @@ var
   md5 = require('MD5'), 
   glob = require("glob");
 
+// local imports
+var
+  logger = require("./logger");
+  
 
   /* 
    * cordova plugin cache
@@ -94,7 +98,7 @@ var
     }
   }
   
-  function load(id, version, callback) {
+  function load(id, version, callback, error) {
     var pluginLoader = this;
     var idHash = md5(id);
     var cacheDir;
@@ -143,6 +147,8 @@ var
         return;
       } else {
         console.error("no valid plugin");
+        error();
+        return;
       }
     } else {
       // check registry for plugin
@@ -171,26 +177,38 @@ var
                           callback.call(pluginLoader, pluginId, version, normalizedPath);
                         }
                       } else {
-                        console.error("no valid plugin");
+                        logger.error("no valid plugin");
+                        error();
+                        return;
                       }
                     } else {
-                      console.error("package not found");
+                      logger.error("package not found");
+                      error();
+                      return;
                     }
                   } else {
-                    console.error("error while downloading package");
+                    logger.error("error while downloading package");
+                    error();
+                    return;
                   }
                 });
               }
             } else {
-              console.error("plugin version not found");
+              logger.error("plugin version not found");
+              error();
+              return;
             }
           } else {
             // error not found
-            console.error("error: document not found");
+            logger.error("error: document not found");
+            error();
+            return;
           }
         } else {
           // error: no connection
-          console.error("error: no connection");
+          logger.error("error: no connection");
+          error();
+          return;
         }
       });
     }
