@@ -17,70 +17,111 @@ Once the plugin has been installed, it may be enabled inside your Gruntfile with
 grunt.loadNpmTasks('grunt-cordova-app');
 ```
 
-## The "cordova_build" task
+## The "cordova_app" task
 
 ### Overview
 In your project's Gruntfile, add a section named `cordova_build` to the data object passed into `grunt.initConfig()`.
 
 ```js
 grunt.initConfig({
-  cordova_build: {
+  cordova_app: {
     options: {
-      // Task-specific options go here.
-    },
-    your_target: {
-      // Target-specific file lists and/or options go here.
-    },
-  },
+      path: 'tmp/cordova',
+      clean: false,
+      config: 'test/fixtures/cordova.json'
+    }
+  }
 });
 ```
 
 ### Options
 
-#### options.separator
+#### options.clean
+Type: `Boolean`
+Default value: `false`
+
+Specifies whether to clean before build.
+
+#### options.config
 Type: `String`
-Default value: `',  '`
+Default value: `[generated from pkg]`
 
-A string value that is used to do something with whatever.
+An object or source-file containing config options. source can be json or xml.
 
-#### options.punctuation
+#### options.hooks
+Type: `Object`
+Default value: `{}`
+
+An object containing functions to be called at certain hooks in the build process. Currently supported are `beforeBuild` and `afterBuild`.
+
+
+#### options.path
 Type: `String`
-Default value: `'.'`
+Default value: `'cordova'`
 
-A string value that is used to do something else with whatever else.
+An object or source-file containing config options. source can be json or xml.
 
-### Usage Examples
+### Target flags
 
-#### Default Options
-In this example, the default options are used to do something with whatever. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result would be `Testing, 1 2 3.`
+If you run task without any target-flags, the application will be built from scratch completely.
+
+#### cordova_app:clean
+Cleans up the build path.
+
+#### cordova_app:create
+Creates a new cordova-app on the build path.
+
+#### cordova_app:config
+Writes out config file and sets up platforms and plugins.
+
+#### cordova_app:build
+Builds the application. Arguments: --platform [platform]
+
+#### cordova_app:run
+Runs the application. Arguments: --platform [platform]
+
+### Basic example
+
+In this example, a cordova application is built from a json file. 
 
 ```js
 grunt.initConfig({
-  cordova_build: {
-    options: {},
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
-    },
-  },
-});
-```
-
-#### Custom Options
-In this example, custom options are used to do something else with whatever else. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result in this case would be `Testing: 1 2 3 !!!`
-
-```js
-grunt.initConfig({
-  cordova_build: {
+  cordova_app: {
     options: {
-      separator: ': ',
-      punctuation: ' !!!',
-    },
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
-    },
-  },
+      path: 'cordova',
+      config: 'cordova.json',
+      hooks: {
+        beforeBuild: function() {
+          // do something before the build
+        }
+      }
+    }
+  }
 });
 ```
+cordova.js
+```json
+{
+  "id": "grunt.cordova.app.example-app", 
+  "version": "0.0.1",
+  "name": "Example App",
+  "platforms": {
+    "android": {}, "ios": {}
+  }, 
+  "plugins": {
+    "org.apache.cordova.console": "0.2.10",
+    "cc.fovea.cordova.purchase": "3.9.0-beta.4",
+    "https://github.com/Wizcorp/phonegap-facebook-plugin.git": {
+      "version": "0.10.1",
+      "params": {  
+        "APP_ID": "XXXXXXXXXXXXXXX", 
+        "APP_NAME": "Fictional Facebook-App"
+      }
+    }
+  }
+}
+```
+
 
 ## Contributing
 In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
