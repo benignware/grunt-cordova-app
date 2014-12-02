@@ -43,4 +43,4 @@ Logger.prototype.error = function(message) {
   console.log(chalk[Logger.ERROR](message) + Logger.DEFAULT);
 };
 
-module.exports = Logger;
+module.exports = Logger.getInstance();
