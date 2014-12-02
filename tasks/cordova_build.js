@@ -1,6 +1,6 @@
 /*
- * grunt-cordova-build
- * https://github.com/rafaelnowrotek/grunt-cordova-build
+ * grunt-cordova-app
+ * https://github.com/benignware/grunt-cordova-app
  *
  * Copyright (c) 2014 Rafael Nowrotek
  * Licensed under the MIT license.
@@ -109,7 +109,6 @@ module.exports = function(grunt) {
      * Init config
      */
     initConfig: function(options, callback) {
-      //logger.info("Init grunt-cordova-build");
       // get config files
       if (typeof options.config === 'string') {
         // parse config file

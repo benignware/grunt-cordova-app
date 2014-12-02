@@ -1,8 +1,8 @@
 {
-  "name": "grunt-cordova-build",
+  "name": "grunt-cordova-app",
   "description": "Automate build of cordova apps",
   "version": "0.0.2",
-  "homepage": "https://github.com/rafaelnowrotek/grunt-cordova-build",
+  "homepage": "https://github.com/rafaelnowrotek/grunt-cordova-app",
   "author": {
     "name": "Rafael Nowrotek",
     "email": "mail@benignware.com",
@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/rafaelnowrotek/grunt-cordova-build.git"
+    "url": "git://github.com/rafaelnowrotek/grunt-cordova-app.git"
   },
   "bugs": {
-    "url": "https://github.com/rafaelnowrotek/grunt-cordova-build/issues"
+    "url": "https://github.com/rafaelnowrotek/grunt-cordova-app/issues"
   },
   "licenses": [
     {
       "type": "MIT",
-      "url": "https://github.com/rafaelnowrotek/grunt-cordova-build/blob/master/LICENSE-MIT"
+      "url": "https://github.com/rafaelnowrotek/grunt-cordova-app/blob/master/LICENSE-MIT"
     }
   ],
   "engines": {
