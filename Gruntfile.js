@@ -36,9 +36,9 @@ module.exports = function(grunt) {
     },
 
     // Configuration to be run (and then tested).
-    cordova_build: {
+    cordova_app: {
       options: {
-        path: 'tmp/cordova',
+        path: 'tmp',
         clean: false,
         config: 'test/fixtures/cordova.json',
         hooks: {
@@ -46,7 +46,7 @@ module.exports = function(grunt) {
             console.log("Before build hook is called");
             grunt.file.expand({cwd: "test/fixtures/app"}, "**/*").forEach(function(file) {
               console.log("Copy file: ", file);
-              grunt.file.copy("test/fixtures/app/" + file, 'tmp/cordova/www/' + file);
+              grunt.file.copy("test/fixtures/app/" + file, 'tmp/www/' + file);
             });
           }, 
           /*beforePrepare: [
@@ -76,7 +76,7 @@ module.exports = function(grunt) {
 
   // Whenever the "test" task is run, do not clean the "tmp" dir in order to use caching, then run this
   // plugin's task(s), then test the result.
-  grunt.registerTask('test', ['cordova_build', 'nodeunit']);
+  grunt.registerTask('test', ['cordova_app', 'nodeunit']);
 
   // By default, lint and run all tests.
   grunt.registerTask('default', ['jshint', 'test']);
