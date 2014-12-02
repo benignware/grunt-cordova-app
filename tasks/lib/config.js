@@ -7,7 +7,6 @@ var
   fs = require('fs'),
   merge = require("deepmerge");
 
-
 var namespaces = {
   "default": "http://www.w3.org/ns/widgets", 
   "cdv": "http://cordova.apache.org/ns/1.0",
@@ -253,8 +252,9 @@ function normalize(json) {
   return json;
 }
 
-function Config() {
+function Config(pkg) {
   // keep domjs-representation
+  this.pkg = pkg;
   this.json = null;
   this.domjs = null;
 }
@@ -326,10 +326,12 @@ Config.prototype.load = function(file) {
     }
   }
   
+  return this.json;
+  
 };
 
 Config.prototype.save = function(dest) {
   fs.writeFileSync(dest, this.toXML());
 };
 
-module.exports = Config;
+module.exports = new Config();
