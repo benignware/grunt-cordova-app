@@ -37,29 +37,23 @@ module.exports = function(grunt) {
 
     // Configuration to be run (and then tested).
     cordova_build: {
-      default_options: {
-        options: {
-          path: 'tmp/default_options/cordova',
-          clean: false,
-          config: {
-            name: "Hello My App"
-          }
-        }
-      },
-      custom_options: {
-        options: {
-          path: 'tmp/custom_options/cordova',
-          clean: false,
-          config: 'test/fixtures/cordova.json',
-          hooks: {
-            beforeBuild: function() {
-              console.log("Before build hook is called");
-              grunt.file.expand({cwd: "test/fixtures/app"}, "**/*").forEach(function(file) {
-                console.log("Copy file: ", file);
-                grunt.file.copy("test/fixtures/app/" + file, 'tmp/custom_options/cordova/www/' + file);
-              });
-            }
-          }
+      options: {
+        path: 'tmp/cordova',
+        clean: false,
+        config: 'test/fixtures/cordova.json',
+        hooks: {
+          beforeBuild: function() {
+            console.log("Before build hook is called");
+            grunt.file.expand({cwd: "test/fixtures/app"}, "**/*").forEach(function(file) {
+              console.log("Copy file: ", file);
+              grunt.file.copy("test/fixtures/app/" + file, 'tmp/cordova/www/' + file);
+            });
+          }, 
+          /*beforePrepare: [
+            "cd tmp/custom_options/cordova/plugins/com.phonegap.plugins.facebookconnect/platforms/android/FacebookLib" + 
+            "&& android update project --subprojects --p . " + 
+            "&& ant release"
+          ].join(" && ")*/
         }
       }
     },
