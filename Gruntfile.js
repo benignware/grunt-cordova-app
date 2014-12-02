@@ -1,6 +1,6 @@
 /*
- * grunt-cordova-build
- * https://github.com/rafaelnowrotek/grunt-cordova-build
+ * grunt-cordova-app
+ * https://github.com/rafaelnowrotek/grunt-cordova-app
  *
  * Copyright (c) 2014 Rafael Nowrotek
  * Licensed under the MIT license.

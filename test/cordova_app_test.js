@@ -23,7 +23,7 @@ var dom = require('xmldom').DOMParser;
     test.ifError(value)
 */
 
-exports.cordova_build = {
+exports.cordova_app = {
   setUp: function(done) {
     // setup here if necessary
     done();
