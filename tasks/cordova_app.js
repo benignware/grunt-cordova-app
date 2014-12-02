@@ -104,6 +104,7 @@ module.exports = function(grunt) {
   };
   
   // sub-tasks
+  // TODO: reduce to build phases
   var subTasks = {
     /*
      * Init config
@@ -438,10 +439,23 @@ module.exports = function(grunt) {
     }
     
     if (Object.keys(flags).length === 0) {
-      flags['clean'] = true;
-      flags['create'] = true;
-      flags['config'] = true;
-      flags['build'] = true;
+      // default tasks
+      taskList = [
+        'initConfig', 
+        'clean',
+        'create',
+        'writeConfig',
+        'readConfig',
+        'removePlatforms',
+        'removePlugins',
+        'addPlatforms',
+        'addPlugins',
+        'beforeBuild',
+        'sanitize',
+        'prepare',
+        'compile',
+        'afterBuild'
+      ];
     }
     
     if (this.flags.clean) {
@@ -487,7 +501,6 @@ module.exports = function(grunt) {
         'run'
       ];
     }
-    
     // start the queue
     runTasks(subTasks, taskList, options, done);
   });
