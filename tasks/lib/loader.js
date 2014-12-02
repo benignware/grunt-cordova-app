@@ -26,9 +26,8 @@ var
    */
   function PluginLoader(options) {
     this.options = options || {};
-    this.options.path = options.path || "./";
-    this.options.cache = path.join(this.options.path, options.cache || path.join("cache", "plugins"));
-    this.options.tmp = path.join(this.options.path, options.tmp || path.join(this.options.cache, "tmp"));
+    this.options.cache = path.join(this.options.path, "cache/plugins");
+    this.options.tmp = path.join(this.options.path, "cache/plugins/tmp");
     this.queue = [];
     this.complete = true;
     this.error = true;
