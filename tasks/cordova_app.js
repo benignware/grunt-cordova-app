@@ -25,7 +25,7 @@ var
   cheerio = require("cheerio"),
   html = require("html"),
   // local modules
-  logger = require('./lib/logger.js').getInstance(),
+  logger = require('./lib/logger.js'),
   config = require('./lib/config.js'),
   PluginLoader = require('./lib/loader.js');
 
