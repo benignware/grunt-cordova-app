@@ -16,7 +16,7 @@ Logger.DEFAULT = '\x1b[0m';
 Logger.LOG = "black";
 Logger.INFO = "cyan";
 Logger.OK = "green";
-Logger.WARN = "orange";
+Logger.WARN = "yellow";
 Logger.ERROR = "red";
 
 Logger.getInstance = function() {
