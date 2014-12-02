@@ -31,11 +31,11 @@ exports.cordova_app = {
   build: function(test) {
     test.expect(1);
 
-    var actual = grunt.file.read('tmp/custom_options/cordova/config.xml');
-    var expected = grunt.file.read('test/expected/custom_options/cordova/config.xml');
+    var actual = grunt.file.read('tmp/config.xml');
+    var expected = grunt.file.read('test/expected/config.xml');
     test.equal(actual, expected, 'config.xml should match expected result.');
     
-    // TODO: Test installation
+    // TODO: Test compile
 
     test.done();
   },
