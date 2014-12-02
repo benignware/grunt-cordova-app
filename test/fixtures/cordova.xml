@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<widget id="grunt.cordova.build.xml" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:gap="http://phonegap.com/ns/1.0">
-  <name>grunt-cordova-build-from.xml</name>
-  <description>cordova-app description-from-xml</description>
-  <feature name="Device">
-    <param name="android-package" value="org.apache.cordova.device.Device" />
-  </feature>
-</widget>
