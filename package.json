@@ -1,7 +1,7 @@
 {
   "name": "grunt-cordova-app",
   "description": "Automate build of cordova apps",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "homepage": "https://github.com/rafaelnowrotek/grunt-cordova-app",
   "author": {
     "name": "Rafael Nowrotek",
@@ -37,7 +37,7 @@
     "chalk": "^0.5.1", 
     "request": "^2.49.0", 
     "tarball-extract": "^0.0.3", 
-    "node-fs": "^0.1.7", 
+    "fs-extra": "^0.12.0", 
     "ncp": "^1.0.1", 
     "MD5": "^1.2.1", 
     "glob": "^4.0.5",
