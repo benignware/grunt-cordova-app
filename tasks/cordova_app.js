@@ -298,6 +298,7 @@ module.exports = function(grunt) {
      */
     removePlatforms: function(options, callback) {
       var oldPlatforms = grunt.file.expand({filter: 'isDirectory', cwd: path.join(options.path, "platforms")}, "*");
+      var platforms = grunt.option('platform') ? [grunt.option('platform')] : oldPlatforms;
       oldPlatforms.forEach(function(platform) {
         logger.info("Remove platform " + platform + "");
         var rtn = exec(shell, "cd " + options.path + " && cordova platform remove " + platform + "");
@@ -315,7 +316,8 @@ module.exports = function(grunt) {
       var success = true;
       if (typeof options.config.platforms === "object") {
         // add platforms
-        Object.keys(options.config.platforms).forEach(function(platform) {
+        var platforms = grunt.option('platform') ? [grunt.option('platform')] : Object.keys(options.config.platforms);
+        platforms.forEach(function(platform) {
           if (success) {
             logger.info("Add platform " + platform + "");
             var rtn = exec(shell, "cd " + options.path + " && cordova platform add " + platform + "");
