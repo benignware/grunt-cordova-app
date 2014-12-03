@@ -11,7 +11,6 @@ var
   shell = require('shelljs'), 
   merge = require('deepmerge'), 
   http = require('http'),
-  httpsync = require('httpsync'),  
   tarball = require('tarball-extract'), 
   md5 = require('MD5'), 
   glob = require("glob");
