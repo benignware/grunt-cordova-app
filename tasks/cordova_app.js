@@ -93,12 +93,16 @@ module.exports = function(grunt) {
     }
     if (commands instanceof Array) {
       commands.forEach(function(command) {
+        if (typeof command === 'function') {
+          var rtnCmd = command(grunt, shell, options.path);
+          if (typeof rtnCmd === "string") {
+            command = rtnCmd;
+          }
+        }
         if (typeof command === 'string') {
           shell.exec(command);
         }
-        if (typeof command === 'function') {
-          command(shell, options.path);
-        }
+        
       });
     }
   };

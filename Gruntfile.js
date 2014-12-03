@@ -42,18 +42,13 @@ module.exports = function(grunt) {
         clean: false,
         config: 'test/fixtures/cordova.json',
         hooks: {
-          beforeBuild: function() {
+          beforeBuild: function(grunt) {
             console.log("Before build hook is called");
             grunt.file.expand({cwd: "test/fixtures/app"}, "**/*").forEach(function(file) {
               console.log("Copy file: ", file);
               grunt.file.copy("test/fixtures/app/" + file, 'tmp/www/' + file);
             });
-          }, 
-          /*beforePrepare: [
-            "cd tmp/custom_options/cordova/plugins/com.phonegap.plugins.facebookconnect/platforms/android/FacebookLib" + 
-            "&& android update project --subprojects --p . " + 
-            "&& ant release"
-          ].join(" && ")*/
+          }
         }
       }
     },
