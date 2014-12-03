@@ -118,7 +118,7 @@ var
     // create tmp-dir if not exists
     var tmpDir = path.join(this.options.tmp, path.basename(id).substring(0, path.basename(id).length - path.extname(id).length));
     if(!fs.existsSync(tmpDir)){
-      fs.mkdirSync(tmpDir, "777", true);  
+      fs.mkdirSync(tmpDir, 0777, true);  
     }
     // handle types
     if (path.extname(id) === ".git") {
@@ -137,7 +137,7 @@ var
         // create cache-dir with plugin-id
         cacheDir = path.join(pluginLoader.options.cache, idHash, pluginId, version ? version : "master");
         if (!fs.existsSync(cacheDir)){
-          fs.mkdirSync(cacheDir, "777", true); 
+          fs.mkdirSync(cacheDir, 0777, true); 
         }
         fs.renameSync(tmpDir, cacheDir);
         var normalizedPath = path.relative(pluginLoader.options.path, cacheDir);
@@ -163,13 +163,13 @@ var
                 tarball.extractTarballDownload(versionData.dist.tarball, downloadPath, extractPath, {}, function(err, result) {
                   if (err === null) {
                     var packagePath = path.join(result.destination, "package");
-                    if (fs.existsSync(packagePath, "777", true)) {
+                    if (fs.existsSync(packagePath, 0777, true)) {
                       var pluginId = getPluginId(path.join(packagePath, "plugin.xml"));
                       if (pluginId) {
                         // setup cache-dir with plugin-id
                         cacheDir = path.join(pluginLoader.options.cache, idHash, pluginId, checkVersion);
                         if (!fs.existsSync(cacheDir)){
-                          fs.mkdirSync(cacheDir, "777", true); 
+                          fs.mkdirSync(cacheDir, 0777, true); 
                           fs.renameSync(packagePath, cacheDir);
                           var normalizedPath = path.relative(pluginLoader.options.path, cacheDir);
                           callback.call(pluginLoader, pluginId, version, normalizedPath);
