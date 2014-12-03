@@ -395,7 +395,15 @@ module.exports = function(grunt) {
         // iterate through platforms and exec prepare
         platforms.forEach(function(platform) {
           logger.info("Run platform " + platform + "");
-          var rtn = exec(shell, "cd " + options.path + " && cordova run " + platform + "");
+          var device = grunt.option('device');
+          var cmd = "cd " + options.path + " && cordova run " + platform + "";
+          if (typeof device !== "undefined") {
+            if (typeof device === "boolean" && device) {
+              device = "";
+            }
+            cmd+= ' --device ' + device;
+          }
+          var rtn = exec(shell, cmd);
           if (rtn.code !== 0) {
             success = false;
             return;
