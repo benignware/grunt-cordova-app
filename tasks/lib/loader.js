@@ -5,7 +5,7 @@ var
   dom = require('xmldom').DOMParser, 
   js2xmlparser = require("js2xmlparser"),
   path = require('path'), 
-  fs = require('node-fs'),
+  fs = require('fs-extra'),
   ncp = require('ncp').ncp,
   chalk = require('chalk'),
   shell = require('shelljs'), 
@@ -118,7 +118,7 @@ var
     // create tmp-dir if not exists
     var tmpDir = path.join(this.options.tmp, path.basename(id).substring(0, path.basename(id).length - path.extname(id).length));
     if(!fs.existsSync(tmpDir)){
-      fs.mkdirSync(tmpDir, 0777, true);  
+      fs.mkdirsSync(tmpDir);  
     }
     // handle types
     if (path.extname(id) === ".git") {
@@ -137,9 +137,10 @@ var
         // create cache-dir with plugin-id
         cacheDir = path.join(pluginLoader.options.cache, idHash, pluginId, version ? version : "master");
         if (!fs.existsSync(cacheDir)){
-          fs.mkdirSync(cacheDir, 0777, true); 
+          fs.mkdirsSync(cacheDir); 
         }
-        fs.renameSync(tmpDir, cacheDir);
+        //fs.renameSync(tmpDir, cacheDir);
+        fs.copySync(tmpDir, cacheDir);
         var normalizedPath = path.relative(pluginLoader.options.path, cacheDir);
         callback.call(pluginLoader, pluginId, version, normalizedPath);
         return;
@@ -169,8 +170,9 @@ var
                         // setup cache-dir with plugin-id
                         cacheDir = path.join(pluginLoader.options.cache, idHash, pluginId, checkVersion);
                         if (!fs.existsSync(cacheDir)){
-                          fs.mkdirSync(cacheDir, 0777, true); 
-                          fs.renameSync(packagePath, cacheDir);
+                          fs.mkdirsSync(cacheDir); 
+                          //fs.renameSync(packagePath, cacheDir);
+                          fs.copySync(packagePath, cacheDir);
                           var normalizedPath = path.relative(pluginLoader.options.path, cacheDir);
                           callback.call(pluginLoader, pluginId, version, normalizedPath);
                         }
@@ -185,7 +187,7 @@ var
                       return;
                     }
                   } else {
-                    logger.error("error while downloading package");
+                    logger.error("Error while downloading and extracting package: " + downloadPath);
                     error();
                     return;
                   }

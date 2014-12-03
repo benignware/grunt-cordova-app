@@ -14,7 +14,7 @@ var
   dom = require('xmldom').DOMParser, 
   js2xmlparser = require("js2xmlparser"),
   path = require('path'), 
-  fs = require('node-fs'),
+  fs = require('fs-extra'),
   ncp = require('ncp').ncp,
   shell = require('shelljs'), 
   merge = require('deepmerge'), 
@@ -169,7 +169,7 @@ module.exports = function(grunt) {
           return;
         }
         logger.info("Create cordova app " + options.config.id);
-        fs.mkdirSync(options.path, "777", true);
+        fs.mkdirsSync(options.path);
         // exec beforeCreate-hook
         var rtn = exec(shell, "cordova create \"" + options.path + "\" \"" + options.config.id + "\" \"" + options.config.name + "\"");
         if (rtn.code !== 0) {

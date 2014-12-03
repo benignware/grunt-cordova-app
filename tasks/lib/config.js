@@ -4,7 +4,7 @@ var
   xmldom = require('xmldom'), 
   js2xmlparser = require("js2xmlparser"), 
   xml2js = require("xml2js"),
-  fs = require('fs'),
+  fs = require('fs-extra'),
   merge = require("deepmerge"),
   path = require("path"),
   logger = require('./logger');
