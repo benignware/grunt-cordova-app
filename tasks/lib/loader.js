@@ -20,8 +20,8 @@ var
   logger = require("./logger");
   
 
-  /* 
-   * cordova plugin cache
+  /**
+   * Cordova Plugin Cache
    */
   function PluginLoader(options) {
     this.options = options || {};
@@ -33,6 +33,9 @@ var
     cleanDir(this.options.tmp);
   };
   
+  /**
+   * Loads a plugin into cache
+   */
   PluginLoader.prototype.load = function(id, version, callback) {
     this.queue.push({id: id, version: version, callback: callback});
     if (this.complete) {
@@ -41,12 +44,20 @@ var
     }
   };
   
+  /**
+   * Unloads a plugin from cache 
+   */
+  // TODO: implement
   PluginLoader.prototype.unload = function(id) {
     if (typeof id == "undefined") {
       // remove all
     }
   };
   
+  /**
+   * Cleans a directory recursively
+   */
+  // TODO: replace with fs-extensions
   function cleanDir(path) {
     if ( fs.existsSync(path) ) {
       fs.readdirSync(path).forEach(function(file,index){
@@ -54,7 +65,7 @@ var
         if ( fs.lstatSync(curPath).isDirectory() ) { // recurse
           cleanDir(curPath);
         } else { 
-          // delete file
+          // Delete file
           fs.unlinkSync(curPath);
         }
       });
@@ -62,6 +73,9 @@ var
     }
   };
   
+  /**
+   * Simple GET-Request
+   */
   function fetchURL(url, callback) {
     var data = [];
     http.get(url, function(res) {
@@ -78,6 +92,7 @@ var
     });
   }
   
+  // Reads plugin-id from plugin.xml 
   function getPluginId(pluginFile) {
     if (fs.existsSync(pluginFile)) {
       var xml = fs.readFileSync(pluginFile, 'utf8');
@@ -91,7 +106,7 @@ var
         }
       }
     } else {
-      // error: no plugin file found
+      // Error: No plugin file found
       console.error("no plugin file found.");
     }
   }
@@ -100,11 +115,14 @@ var
     var pluginLoader = this;
     var idHash = md5(id);
     var cacheDir;
+    var rtn;
     if (version) {
+      // Try to load plugin from cache
       var cDir = path.join(pluginLoader.options.cache, idHash);
       var pattern = path.join(pluginLoader.options.cache, idHash, "*", version);
       var files = glob.sync(pattern, {});
       if (files.length) {
+        // Hash exists in cache
         cacheDir = files[0];
         var pluginId = getPluginId(path.join(cacheDir, "plugin.xml"));
         if (pluginId) {
@@ -115,78 +133,102 @@ var
         }
       }
     } 
-    // create tmp-dir if not exists
+    // Create tmp-dir if not exists
     var tmpDir = path.join(this.options.tmp, path.basename(id).substring(0, path.basename(id).length - path.extname(id).length));
     if(!fs.existsSync(tmpDir)){
       fs.mkdirsSync(tmpDir);  
     }
-    // handle types
+    // Handle source types
     if (path.extname(id) === ".git") {
-      // clone git repository
+      // Clone git repository
       var cmd = "git clone ";
       if (version) {
         cmd+= "-b " + version + " ";
       }
       cmd+= id + " ";
       cmd+= tmpDir;
-      // execute command
+      // Execute command
       shell.exec(cmd);
-      // try to read plugin.xml
+      // Try to read plugin.xml
       var pluginId = getPluginId(path.join(tmpDir, "plugin.xml"));
       if (pluginId) {
-        // create cache-dir with plugin-id
+        // Create cache-dir with plugin-id
         cacheDir = path.join(pluginLoader.options.cache, idHash, pluginId, version ? version : "master");
         if (!fs.existsSync(cacheDir)){
           fs.mkdirsSync(cacheDir); 
         }
-        //fs.renameSync(tmpDir, cacheDir);
-        fs.copySync(tmpDir, cacheDir);
-        var normalizedPath = path.relative(pluginLoader.options.path, cacheDir);
-        callback.call(pluginLoader, pluginId, version, normalizedPath);
+        // Remove .git-project from tmp dir
+        var rtn = shell.exec("rm -rv " + path.join(tmpDir, ".git"));
+        if (rtn.code === 0) {
+          // Copy files from tmp to cache dir
+          fs.copySync(tmpDir, cacheDir);
+          var normalizedPath = path.relative(pluginLoader.options.path, cacheDir);
+          callback.call(pluginLoader, pluginId, version, normalizedPath);
+          // Plugin has been loaded successfully from git repository
+          return;
+        } else {
+          logger.error("Command finished with error code: " + rtn.code);
+          error();
+          return;
+        }
+        
         return;
       } else {
+        // Invalid plugin
         console.error("no valid plugin");
         error();
         return;
       }
     } else {
-      // check registry for plugin
+      // Check registry for plugin
       var pluginRegistryUrl = "http://registry.cordova.io/" + id;
       fetchURL(pluginRegistryUrl, function(json) {
         if (json) {
           if (!json.error) {
+            // Check versions
             var checkVersion = version ? version : json['dist-tags'].latest;
             var versionData = json.versions[checkVersion];
             if (versionData) {
+              // Check download
               if (versionData.dist && versionData.dist.tarball) {
+                // Download and extract tarball
                 var downloadPath = path.join(tmpDir, path.basename(versionData.dist.tarball));
                 var extractPath = tmpDir;
                 tarball.extractTarballDownload(versionData.dist.tarball, downloadPath, extractPath, {}, function(err, result) {
                   if (err === null) {
+                    // Tarball has been successfully downloaded and extracted
                     var packagePath = path.join(result.destination, "package");
                     if (fs.existsSync(packagePath, 0777, true)) {
+                      // Package found
                       var pluginId = getPluginId(path.join(packagePath, "plugin.xml"));
+                      // Check for valid plugin
                       if (pluginId) {
-                        // setup cache-dir with plugin-id
+                        // Setup cache-dir with plugin-id
                         cacheDir = path.join(pluginLoader.options.cache, idHash, pluginId, checkVersion);
+                        // Create cache-dir if not exists
                         if (!fs.existsSync(cacheDir)){
                           fs.mkdirsSync(cacheDir); 
-                          //fs.renameSync(packagePath, cacheDir);
-                          fs.copySync(packagePath, cacheDir);
-                          var normalizedPath = path.relative(pluginLoader.options.path, cacheDir);
-                          callback.call(pluginLoader, pluginId, version, normalizedPath);
                         }
+                        // Copy files to cache-dir
+                        fs.copySync(packagePath, cacheDir);
+                        var normalizedPath = path.relative(pluginLoader.options.path, cacheDir);
+                        // Finished downloading plugin
+                        callback.call(pluginLoader, pluginId, version, normalizedPath);
+                        return;
                       } else {
+                        // Invalid plugin
                         logger.error("no valid plugin");
                         error();
                         return;
                       }
                     } else {
+                      // Package not found
                       logger.error("package not found");
                       error();
                       return;
                     }
                   } else {
+                    // Download error
                     logger.error("Error while downloading and extracting package: " + downloadPath);
                     error();
                     return;
@@ -194,19 +236,20 @@ var
                 });
               }
             } else {
+              // Version required
               logger.error("plugin version not found");
               error();
               return;
             }
           } else {
-            // error not found
+            // Document not found in registry
             logger.error("error: document not found");
             error();
             return;
           }
         } else {
-          // error: no connection
-          logger.error("error: no connection");
+          // No connection
+          logger.error("Error: No connection");
           error();
           return;
         }
@@ -214,6 +257,9 @@ var
     }
   }
   
+  /**
+   * Loads the next item in the queue
+   */
   function next() {
     var pluginLoader = this;
     var item = this.queue.shift();
@@ -226,7 +272,7 @@ var
           callback.apply(this, arguments);
           next.call(pluginLoader);
         }, function() {
-          // error
+          // Error
           fail.call(pluginLoader);
         });
       }, 10);
@@ -235,12 +281,18 @@ var
     }
   }
   
+  /**
+   * Called when loading of plugin has failed
+   */
   function fail() {
     if (typeof this.options.error) {
       this.options.error();
     }
   }
   
+  /**
+   * Called when loading of plugin is done
+   */
   function done() {
     this.complete = true;
     cleanDir(this.options.tmp);
@@ -248,4 +300,6 @@ var
       this.options.success();
     }
   }
+  
+  // Export PluginLoader class
   module.exports = PluginLoader;
