@@ -11,7 +11,7 @@
     "https://github.com/Wizcorp/phonegap-facebook-plugin.git": {
       "version": "0.10.1",
       "params": {  
-        "APP_ID": "XXXXXXXXXXXXXXX", 
+        "APP_ID": "<% if (cli.target === 'development') { %>XXXXXXXXXXXXXXX<% } else { %>YYYYYYYYYYYYYYY<% } %>", 
         "APP_NAME": "Fictional Facebook-App"
       }
     }

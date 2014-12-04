@@ -7,6 +7,7 @@ var
   fs = require('fs-extra'),
   merge = require("deepmerge"),
   path = require("path"),
+  _ = require('lodash'),
   logger = require('./logger');
 
 var namespaces = {
@@ -254,9 +255,8 @@ function normalize(json) {
   return json;
 }
 
-function Config(pkg) {
+function Config() {
   // keep domjs-representation
-  this.pkg = pkg;
   this.json = null;
   this.domjs = null;
 }
@@ -277,34 +277,46 @@ Config.prototype.toXML = function() {
   return xml;
 };
 
-Config.prototype.load = function(file) {
-  // load json
+Config.prototype.load = function(file, data) {
+  data = typeof data === "object" ? data : {};
+  // Load config data
   var json, doc;
-  // read object
   if (typeof file == "object") {
+    // read object
     if (file.documentElement || file.ownerDocument) {
+      // read xml-document
       doc = file;
     } else {
-      json = file;
+      // read json and merge with options
+      json = merge(file, options);
     }
   }
-  // read file
   if (!json && !doc) {
+    // Try to read file
     var contents = fs.readFileSync(file, 'utf8');
     if (contents) {
+      if (typeof data === 'object') {
+        // Process template
+        contents = _.template(contents, data);
+      }
       if (path.extname(file) === '.json') {
+        // Parse json
         try {
           json = JSON.parse(contents);
         } catch(e) {
+          // No valid json input
           logger.error("No valid json input: " + file);
         }
       } else if (path.extname(file) === '.xml') {
+        // Parse xml
         try {
           doc = new xmldom.DOMParser().parseFromString(contents);
         } catch(e) {
+          // No valid xml input
           logger.error("No valid xml input: " + file);
         }
       } else {
+        // No valid input at all
         logger.error("No valid input: " + file);
         return;
       }
@@ -312,16 +324,17 @@ Config.prototype.load = function(file) {
   }
   
   if (json) {
+    // Set json result
     this.json = normalize(json);
     this.domjs = js2domjs(json);
     
   } else if (doc && contents) {
-    
-    // get json
+    // Parse xml
+    // Get json
     json = dom2js(doc.documentElement);
     this.json = normalize(json);
     
-    // convert to domjs
+    // Get domjs
     var domjs;
     var parser = new xml2js.Parser({attrkey: "@", charkey: "#"});
     parser.parseString(contents, function (err, result) {

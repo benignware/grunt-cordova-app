@@ -114,12 +114,13 @@ module.exports = function(grunt) {
      * Init config
      */
     initConfig: function(options, callback) {
-      // get config files
+      // Get config files
       if (typeof options.config === 'string') {
-        // parse config file
+        // Parse config file
         if ( grunt.file.isFile( options.config ) ) {
-          config.load( options.config );
+          config.load( options.config, { options: options, pkg: pkg, cli: grunt.cli.options } );
         } else {
+          // Config file not found
           logger.error("config file not found: " + options.config);
           callback(false);
           return;
