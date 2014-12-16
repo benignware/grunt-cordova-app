@@ -78,11 +78,11 @@ var js2domjs = function(options) {
       };
     });
   }
-  // screens
-  if (options.screens instanceof Array) {
-    data.screen = options.screens.map(function(screen) {
+  // splash
+  if (options.splash instanceof Array) {
+    data.splash = options.splash.map(function(screen) {
       return {
-        "@": screen
+        "@": splash
       };
     });
   }
@@ -228,14 +228,14 @@ var dom2js = function(node) {
         };
       });
     }
-    // screens
-    var screenNodes = select("./default:screen", node);
-    if (screenNodes.length) {
-      result.screens = iconNodes.map(function(screenNode) {
+    // splash
+    var splashNodes = select("./default:splash", node);
+    if (splashNodes.length) {
+      result.splashs = splashNodes.map(function(splashNode) {
         return {
-          src: screenNode.getAttribute('src'),
-          width: screenNode.getAttribute('width'),
-          height: screenNode.getAttribute('height') 
+          src: splashNode.getAttribute('src'),
+          width: splashNode.getAttribute('width'),
+          height: splashNode.getAttribute('height') 
         };
       });
     }
