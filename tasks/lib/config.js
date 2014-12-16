@@ -80,7 +80,7 @@ var js2domjs = function(options) {
   }
   // splash
   if (options.splash instanceof Array) {
-    data.splash = options.splash.map(function(screen) {
+    data.splash = options.splash.map(function(splash) {
       return {
         "@": splash
       };
@@ -231,11 +231,12 @@ var dom2js = function(node) {
     // splash
     var splashNodes = select("./default:splash", node);
     if (splashNodes.length) {
-      result.splashs = splashNodes.map(function(splashNode) {
+      result.splash = splashNodes.map(function(splashNode) {
         return {
           src: splashNode.getAttribute('src'),
           width: splashNode.getAttribute('width'),
-          height: splashNode.getAttribute('height') 
+          height: splashNode.getAttribute('height'),
+          density: splashNode.getAttribute('density')  
         };
       });
     }
