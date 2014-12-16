@@ -224,7 +224,8 @@ var dom2js = function(node) {
         return {
           src: iconNode.getAttribute('src'),
           width: iconNode.getAttribute('width'),
-          height: iconNode.getAttribute('height') 
+          height: iconNode.getAttribute('height'),
+          density: splashNode.getAttribute('density')
         };
       });
     }
