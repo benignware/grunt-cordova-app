@@ -88,7 +88,13 @@ module.exports = function(grunt) {
     if (!commands) {
       return;
     }
-    if (typeof commands === 'string' || typeof commands === 'function') {
+    if (typeof commands === 'function') {
+      var rtnCmd = commands(grunt, shell, options.path);
+      if (typeof rtnCmd !== "undefined") {
+        commands = rtnCmd;
+      }
+    }
+    if (typeof commands === 'string') {
       commands = [commands];
     }
     if (commands instanceof Array) {
@@ -102,7 +108,6 @@ module.exports = function(grunt) {
         if (typeof command === 'string') {
           shell.exec(command);
         }
-        
       });
     }
   };
